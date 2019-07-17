@@ -1,113 +1,3 @@
-var t = {
-    "function": "check_env",
-    "input": [
-        {
-            "var": "VAR1",
-            "description": "var1 input"
-        },
-        {
-            "var": "VAR2",
-            "description": "var2 input"
-        }
-    ],
-    "output": [
-        {
-            "var": "OUT",
-            "value": [5, "OUT0"], // якщо декілька виходів
-            "description": "standard out"
-        },
-        {
-            "var": "TEMP1VAL",
-            "value": 0,
-            "description": "value of temp1"
-        }
-    ],
-    "body": [
-        {
-            "id": 0,
-            "function": "value",
-            "params": {
-                "item_id": {
-                    "type": "var_in",
-                    "value": "VAR1"
-                }
-            }
-        },
-        {
-            "id": 1,
-            "function": "value",
-            "params": {
-                "item_id": {
-                    "type": "const",
-                    "value": "sensor:env/temp2"
-                }
-            }
-        },
-        {
-            "id": 2,
-            "function": "state",
-            "params": {
-                "item_id": {
-                    "type": "const",
-                    "value": "sensor:env/hum"
-                }
-            }
-        },
-        {
-            "id": 3,
-            "function": "GT",
-            "params": {
-                "IN": {
-                    "type": "const",
-                    "value": 25.5
-                },
-                "args": [ //якщо є аргс то їх може бути багато
-                    {
-                        "type": "block_out",
-                        "value": 0
-                    },
-                    {
-                        "type": "block_out",
-                        "value": 1
-                    }
-                ]
-            }
-        },
-        {
-            "id": 4,
-            "function": "LT",
-            "params": {
-                "IN": {
-                    "type": "const",
-                    "value": 30
-                },
-                "args": [
-                    {
-                        "type": "block_out",
-                        "value": [2, "value"]
-                    }
-                ]
-            }
-        },
-        {
-            "id": 5,
-            "function": "AND",
-            "params": {
-                "args": [
-                    {
-                        "type": "block_out",
-                        "value": 3
-                    },
-                    {
-                        "type": "block_out",
-                        "value": 4
-                    }
-                ]
-            }
-        }
-    ]
-};
-
 function main(container, toolbar, sidebar) {
     if (!mxClient.isBrowserSupported()) {
         mxUtils.error('Browser is not supported!', 200, false);
@@ -126,6 +16,11 @@ function main(container, toolbar, sidebar) {
         graph.setConnectable(true);
         graph.setMultigraph(false);
 
+        //scrolling
+        mxGraph.prototype.scrollCellToVisible = function (cell, center) {
+        };
+
+
         // Stops editing on enter or escape keypress
         var keyHandler = new mxKeyHandler(graph);
         var rubberband = new mxRubberband(graph);
@@ -140,9 +35,8 @@ function main(container, toolbar, sidebar) {
 
         //custom hover for blocks
         function updateStyle(state, hover) {
-            // console.log('state', state)
             if (hover) {
-                state.style[mxConstants.STYLE_FILLCOLOR] = '#90ee90';
+                // state.style[mxConstants.STYLE_FILLCOLOR] = '#90ee90';
                 if (state.cell.block_name === 'body') {
                     graph.setConnectable(false);
                 }
@@ -156,7 +50,6 @@ function main(container, toolbar, sidebar) {
             state.style[mxConstants.STYLE_STROKEWIDTH] = (hover) ? '4' : strokeWidth;
             state.style[mxConstants.STYLE_FONTSTYLE] = (hover) ? mxConstants.FONT_BOLD : '0';
         };
-
 
         // Changes fill color on mouseover
         graph.addMouseListener(
@@ -221,6 +114,11 @@ function main(container, toolbar, sidebar) {
             });
 
 
+        var keyHandler = new mxKeyHandler(graph);
+        keyHandler.bindKey(46, function (evt) {
+            editor.execute('delete');
+        });
+
         // Enables rubberband selection
         new mxRubberband(graph);
 
@@ -229,7 +127,7 @@ function main(container, toolbar, sidebar) {
         graph.cellLabelChanged = function (cell, newValue, autoSize) {
             // Cloned for correct undo/redo
             var elt = cell.value.cloneNode(true);
-            let newname = block_name(newValue, cell.style);
+            let newname = block_name(newValue, cell.block_name);
             elt.setAttribute('label', newname);
             newValue = elt;
             graphCellLabelChanged.apply(this, arguments);
@@ -238,7 +136,7 @@ function main(container, toolbar, sidebar) {
 
         //autoresize vertex
         graph.setAutoSizeCells(true);
-        graph.setCellsResizable(true);
+        graph.setCellsResizable(false);
 
 
         graph.convertValueToString = function (cell) {
@@ -248,14 +146,16 @@ function main(container, toolbar, sidebar) {
         };
         graph.htmlLabels = true;
 
-        //forbidden move child for parent's border
-        mxGraphHandler.prototype.removeCellsFromParent = false;
+        //disable doubleclick
+        graph.dblClick = function (evt, cell) {
+        };
 
         //style for input
         var style = new Object();
         style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_ELLIPSE;
         style[mxConstants.STYLE_FILLCOLOR] = "white";
         style[mxConstants.STYLE_FONTCOLOR] = 'darkblue';
+        style[mxConstants.STYLE_FONTSIZE] = '14';
         style[mxConstants.STYLE_STROKECOLOR] = 'black';
         style[mxConstants.STYLE_FILLCOLOR] = '#EEEEEE';
         style[mxConstants.STYLE_MOVABLE] = '1';
@@ -265,6 +165,7 @@ function main(container, toolbar, sidebar) {
         var style = new Object();
         style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_RECTANGLE;
         style[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_TOP;
+        style[mxConstants.STYLE_SPACING_TOP] = '10';
         style[mxConstants.STYLE_FILLCOLOR] = 'lightgrey';
         graph.getStylesheet().putCellStyle('body', style);
 
@@ -303,6 +204,7 @@ function main(container, toolbar, sidebar) {
         //style for constants
         var style = new Object();
         style[mxConstants.STYLE_SHAPE] = mxConstants.SHAPE_ELLIPSE;
+        style[mxConstants.STYLE_FONTSIZE] = '14';
         style[mxConstants.STYLE_FONTCOLOR] = 'red';
         style[mxConstants.STYLE_FILLCOLOR] = 'white';
         graph.getStylesheet().putCellStyle('constanta', style);
@@ -311,42 +213,45 @@ function main(container, toolbar, sidebar) {
         // ----------------- control for new connections ---------------------- //
         graph.connectionHandler.addListener(mxEvent.CONNECT, function (sender, evt) {
             var edge = evt.getProperty('cell');
-            if ('args, in'.includes(edge.source.type)) {
-                edge.style = 'constanta_input';
-            }
-            if (evt.properties.cell.source.type === 'in') {
-                console.log('source', evt)
-            }
+            edge.style = 'constanta_input';
         });
 
         var connectionHandlerConnect = mxConnectionHandler.prototype.connect;
         mxConnectionHandler.prototype.connect = function (source, target, evt, dropTarget, style) {
+            console.log('source', source)
+            console.log('target', target)
+            if (source.parent === target.parent && (source.parent.id !== '1' || target.parent.id !== '1')) {
+                return false;
+            }
+            if (target.block_name === 'body') {
+                target = target.children[0];
+            }
             if ('input, const'.includes(source.block_name)) {
-                alert('This block cannot source');
-                return false;
-            }
-            else if (source.block_name === 'body') {
-                alert('Please select one of the parts of the unit to start the connection.');
-                return false;
-            }
-            else if (target.block_name === 'body') {
-                alert('Please select one of the parts of the unit to finish the connection.');
-                return false;
-            }
-            else if (target.type === 'args') {
                 source = [target, target = source][0];
-            }
-            else if (target.block_name === 'const') {
-                if (!'var_in, in'.includes(source.type)) {
-                    alert('Constanta can to connect only with child block named item_id or IN.');
+                if (source.type === 'const' && target.block_name === 'input') {
+                    let inp = graph.insertVertex(source.parent, null, block_name('item_id'), (source.geometry.x - 20), (source.geometry.y - 50), 50, 30, 'editable=0;movable=0;fontSize=13');
+                    inp['type'] = 'var_in';
+                    graph.insertEdge(parent, null, '', inp, target, 'body_input');
                     return false;
                 }
-                else if ('var_in, in'.includes(source.type)) {
-                    console.log('source', source)
-                    let edge = source.edges[0];
-                    graph.getModel().remove(edge);
+            }
+            if (target.block_name === 'input') {
+                for (var e in source.parent.children) {
+                    for (var c_e in source.parent.children[e].edges)
+                        if ('input'.includes(source.parent.children[e].edges[c_e].target.block_name)) {
+                            return false;
+                        }
                 }
             }
+            if (target.type === 'args') {
+                source = [target, target = source][0];
+            }
+            if ('var_in, in'.includes(source.type)) {
+                console.log('source', source)
+                let edge = source.edges[0];
+                graph.getModel().remove(edge);
+            }
+            console.log('target finish', target)
             return connectionHandlerConnect.apply(this, arguments);
         };
 
@@ -367,7 +272,7 @@ function main(container, toolbar, sidebar) {
             for (var i = 0; i < t.input.length; i++) {
                 var id = 'input ' + i;
                 var name = block_name(t.input[i], 'input');
-                g_el_in[i] = graph.insertVertex(parent, id, name, x, (i === 0 ? y : y + i * 400), 80, 80, 'input');
+                g_el_in[i] = graph.insertVertex(parent, id, name, x, (i === 0 ? y : y + i * 400), 120, 80, 'input');
                 g_el_in[i].block_name = 'input';
             }
             //body
@@ -384,16 +289,19 @@ function main(container, toolbar, sidebar) {
             b_y[0] = 100;
             b_y[1] = 100;
             b_y[2] = 100;
+            console.log('t.body', t.body)
             for (var b = 0; b < t.body.length; b++) {
+                console.log('0000', 0000)
                 var id = 'body ' + b;
                 var name = block_name(t.body[b], 'body');
                 var x = isKeyExist(t.body[b].params, 'item_id');
                 if (x) {
                     if (t.body[b].params.item_id.type === 'var_in') {
                         body_content[0].push(t.body[b].id);
-                        g_el_body[b] = graph.insertVertex(parent, id, name, b_x[0], b_y[0], 150, 150, 'body');
+                        g_el_body[b] = graph.insertVertex(parent, id, name, b_x[0], b_y[0], 150, 150, 'body;');
+                        console.log('111111', g_el_body[b])
                         g_el_body[b].block_name = 'body';
-                        let inp = graph.insertVertex(g_el_body[b], null, block_name(Object.keys(t.body[b].params)[0]), -150, 100, 50, 30, 'editable=0;');
+                        let inp = graph.insertVertex(g_el_body[b], null, block_name(Object.keys(t.body[b].params)[0]), -150, 100, 50, 30, 'editable=0;movable=0;fontSize=13');
                         inp['type'] = 'var_in';
                         for (var i in g_el_in) {
                             var l = $(g_el_in[i].getAttribute('label'));
@@ -406,11 +314,13 @@ function main(container, toolbar, sidebar) {
                     else if (t.body[b].params.item_id.type === 'const') {
                         body_content[0].push(t.body[b].id);
                         g_el_body[b] = graph.insertVertex(parent, id, name, b_x[0], b_y[0], 150, 150, 'body');
+                        console.log('2222', g_el_body[b])
                         g_el_body[b].block_name = 'body';
-                        let inp = graph.insertVertex(g_el_body[b], null, block_name(Object.keys(t.body[b].params)), -150, 100, 50, 30, 'editable=0;');
+                        let inp = graph.insertVertex(g_el_body[b], null, block_name(Object.keys(t.body[b].params)), -150, 100, 50, 30, 'editable=0;movable=0;fontSize=13');
                         inp['type'] = 'const';
                         let constanta = graph.insertVertex(parent, null, block_name(t.body[b].params.item_id.value), b_x[0] - 150, b_y[0], 100, 100, 'constanta');
                         constanta.block_name = 'const';
+                        addOverlays(graph, constanta);
                         graph.insertEdge(parent, null, '', inp, constanta, 'constanta_input');
                         b_y[0] += 200;
                     }
@@ -436,12 +346,12 @@ function main(container, toolbar, sidebar) {
                     body_content[u].push(t.body[b].id);
                     g_el_body[b] = graph.insertVertex(parent, id, name, b_x[u], b_y[u], 150, 150, 'body');
                     g_el_body[b].block_name = 'body';
-                    let inp = graph.insertVertex(g_el_body[b], null, block_name('input'), -150, 150, 50, 30, 'editable=0;');
+                    let inp = graph.insertVertex(g_el_body[b], null, block_name('input'), -150, 150, 50, 30, 'editable=0;movable=0;fontSize=13');
                     inp['type'] = 'args';
                     for (var bod in args_values) {
                         for (var bod_id in g_el_body) {
                             if (args_values[bod] === +g_el_body[bod_id].id.split(' ')[1]) {
-                                let out = graph.insertVertex(g_el_body[bod_id], null, block_name('out'), 100, 100, 50, 30, 'editable=0;');
+                                let out = graph.insertVertex(g_el_body[bod_id], null, block_name('out'), 100, 100, 50, 30, 'editable=0;movable=0;fontSize=13');
                                 out['type'] = 'block_out';
                                 graph.insertEdge(parent, null, '', inp, out, 'constanta_input');
                             }
@@ -453,6 +363,7 @@ function main(container, toolbar, sidebar) {
                             inp['type'] = 'in';
                             let constanta = graph.insertVertex(parent, null, block_name(t.body[b].params.IN.value), b_x[u] - 100, b_y[u], 80, 80, 'constanta');
                             constanta.block_name = 'const';
+                            addOverlays(graph, constanta);
                             graph.insertEdge(parent, null, '', inp, constanta, 'constanta_input');
                         }
                     }
@@ -462,12 +373,12 @@ function main(container, toolbar, sidebar) {
             for (var o = 0; o < t.output.length; o++) {
                 var id = 'output ' + o;
                 var name = block_name(t.output[o], 'output');
-                g_el_out[o] = graph.insertVertex(parent, id, name, 1300, (o === 0 ? y : y + o * 400), 80, 80, "shape=ellipse;shadow=1;editable=0;");
+                g_el_out[o] = graph.insertVertex(parent, id, name, 1300, (o === 0 ? y : y + o * 400), 120, 80, "shape=ellipse;shadow=1;fontSize=14");
                 g_el_out[o].block_name = 'output';
                 var out = t.output[o].value instanceof Array ? t.output[o].value[0] : t.output[o].value;
                 for (var elem in g_el_body) {
                     if (out === Number(g_el_body[elem].id.split(' ').pop())) {
-                        let out = graph.insertVertex(g_el_body[elem], null, block_name('out'), 100, 150, 50, 30, 'editable=0;');
+                        let out = graph.insertVertex(g_el_body[elem], null, block_name('out'), 100, 150, 50, 30, 'editable=0;movable=0;fontSize=13');
                         out['type'] = 'out';
                         var e1 = graph.insertEdge(parent, null, '', g_el_out[o], out, 'body_output');
                     }
@@ -476,8 +387,15 @@ function main(container, toolbar, sidebar) {
         }
         finally {
             graph.getModel().endUpdate();
-            var layout = new mxGraphLayout(graph, true);
-            layout.execute(graph.getDefaultParent());
+            for (let i = 0; i < g_el_in.length; i++) {
+                addOverlays(graph, g_el_in[i]);
+            }
+            for (let b = 0; b < g_el_body.length; b++) {
+                addOverlays(graph, g_el_body[b]);
+            }
+            for (let o = 0; o < g_el_out.length; o++) {
+                addOverlays(graph, g_el_out[o]);
+            }
         }
     }
 }
@@ -508,7 +426,7 @@ function block_name(label, type = false) {
             return "<span style='font-style: oblique; font-size: large' id='" + label + "'>" + label.toUpperCase() + "</span><br>";
         }
     }
-    else if (type === 'constanta') {
+    else if (type === 'const') {
         return "<span id='" + label + "'>" + label + "</span>";
     }
     else if (!type) {
@@ -518,20 +436,6 @@ function block_name(label, type = false) {
     return block;
 }
 
-function getKeyByValue(object, value) {
-    var path = '';
-    for (var key in object) {
-        if (object[key] === value) {
-            path += key;
-            return path
-        }
-        else if (object[key] instanceof Object) {
-            path += key + ' ' + getKeyByValue(object[key], value);
-            return path
-        }
-    }
-    return false
-}
 
 function isKeyExist(object, key) {
     var d = false;
@@ -549,3 +453,80 @@ function isKeyExist(object, key) {
     return false;
 }
 
+function addOverlays(graph, cell) {
+    var overlay = new mxCellOverlay(new mxImage('/static/img/edit.png', 24, 24), 'Edit');
+    overlay.cursor = 'hand';
+    overlay.align = mxConstants.ALIGN_CENTER;
+    overlay.verticalAlign = mxConstants.ALIGN_TOP;
+    overlay.addListener(mxEvent.CLICK, function (sender, evt) {
+        showEdit(graph, cell);
+    });
+    graph.addCellOverlay(cell, overlay);
+}
+
+function showEdit(graph, cell) {
+    // Creates a form
+    var form = new mxForm('Edit');
+    let label = $(cell.getAttribute('label'));
+    if (cell.block_name === 'input' || cell.block_name === 'output') {
+        var nameField = form.addText('Name', label.attr('id'));
+        var descField = form.addText('Description', label[2].innerHTML);
+    }
+    else {
+        var nameField = form.addText('Value', label.attr('id'));
+    }
+
+    var wnd = null;
+    // Defines the function to be executed when the
+    // OK button is pressed in the dialog
+    var okFunction = function () {
+        let newValue = ('input, output'.includes(cell.block_name)) ? nameField.value + ' ' + descField.value : nameField.value;
+        graph.cellLabelChanged(cell, newValue);
+        // var clone = cell.value.clone();
+        //
+        // clone.name = nameField.value;
+        // clone.desc = descField.value;
+        // graph.model.setValue(cell, clone);
+
+        wnd.destroy();
+    };
+
+    // Defines the function to be executed when the
+    // Cancel button is pressed in the dialog
+    var cancelFunction = function () {
+        wnd.destroy();
+    };
+    form.addButtons(okFunction, cancelFunction);
+    wnd = showModalWindow('Edit', form.table, 200, 150);
+}
+
+function showModalWindow(title, content, width, height) {
+    var background = document.createElement('div');
+    background.style.position = 'absolute';
+    background.style.left = '0px';
+    background.style.top = '0px';
+    background.style.right = '0px';
+    background.style.bottom = '0px';
+    background.style.background = 'black';
+    mxUtils.setOpacity(background, 50);
+    document.body.appendChild(background);
+
+    if (mxClient.IS_QUIRKS) {
+        new mxDivResizer(background);
+    }
+
+    var x = Math.max(0, document.body.scrollWidth / 2 - width / 2);
+    var y = Math.max(10, (document.body.scrollHeight ||
+        document.documentElement.scrollHeight) / 2 - height * 2 / 3);
+    var wnd = new mxWindow(title, content, x, y, width, height, false, true);
+    wnd.setClosable(true);
+
+    // Fades the background out after after the window has been closed
+    wnd.addListener(mxEvent.DESTROY, function (evt) {
+        mxEffects.fadeOut(background, 50, true,
+            10, 30, true);
+    });
+    wnd.setVisible(true);
+
+    return wnd;
+}

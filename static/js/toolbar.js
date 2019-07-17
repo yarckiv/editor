@@ -12,11 +12,11 @@ function show_toolbar(toolbar, sidebar, editor) {
     var spacer = document.createElement('div');
     spacer.style.display = 'inline';
     spacer.style.padding = '8px';
-    addToolbarButton(editor, toolbar, 'new_shape', 'New shape', 'https://jgraph.github.io/mxgraph/javascript/examples/images/plus.png');
-    addToolbarButton(editor, toolbar, 'delete', 'Delete', 'https://jgraph.github.io/mxgraph/javascript/examples/images/delete2.png');
+    // addToolbarButton(editor, toolbar, 'new_shape', 'New shape', 'https://jgraph.github.io/mxgraph/javascript/examples/images/plus.png');
     addToolbarButton(editor, toolbar, 'save', 'Save', 'https://jgraph.github.io/mxgraph/javascript/examples/editors/images/save.gif');
     toolbar.appendChild(spacer.cloneNode(true));
 
+    addToolbarButton(editor, toolbar, 'delete', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/delete2.png');
     addToolbarButton(editor, toolbar, 'undo', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/undo.png');
     addToolbarButton(editor, toolbar, 'redo', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/redo.png');
 
@@ -97,7 +97,7 @@ function save_new(editor) {
     for (var b in body) {
         let id = Number(body[b].id.split(' ')[1]);
         let func = $(body[b].value.getAttribute('label'));
-        let params = [];
+        let params = {};
         if (body[b].children) {
             for (var ch_b in body[b].children) {
                 let child = body[b].children[ch_b];
@@ -136,7 +136,9 @@ function save_new(editor) {
                         }
                     }
                 }
-                params['args'] = args;
+                if (args) {
+                    params.args = args;
+                }
             }
         }
         new_t.body.push({
@@ -162,15 +164,14 @@ function save_new(editor) {
         }
     }
 
+    console.log('new_t', new_t)
     if (new_t) {
         $.ajax('/result', {
             method: "POST",
-            contentType: 'application/json',
+            contentType: "application/json",
             data: JSON.stringify(new_t),
-            dataType: "json",
             success: function (resp) {
-                console.log('resp', resp)
-                location.href='/result'
+                location.href = '/result'
             },
             error: function () {
                 alert('Try later')
