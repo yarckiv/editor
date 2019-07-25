@@ -4,8 +4,8 @@ from flask.json import jsonify
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
-app.config['SERVER_NAME'] = 'localhost:9999'
-# app.config['SERVER_NAME'] = '10.90.2.183:9999'
+# app.config['SERVER_NAME'] = 'localhost:9999'
+app.config['SERVER_NAME'] = '10.90.2.183:9999'
 root_dir = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -79,10 +79,10 @@ def index():
                             "type": "block_out",
                             "value": 0
                         },
-                        {
-                            "type": "block_out",
-                            "value": 1
-                        }
+                        # {
+                        #     "type": "block_out",
+                        #     "value": 1
+                        # }
                     ]
                 }
             },

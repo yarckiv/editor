@@ -103,10 +103,11 @@ function save_new(editor) {
                 let child = body[b].children[ch_b];
                 if (child.type === 'var_in') {
                     for (var e in child.edges) {
-                        if ('input'.includes(child.edges[e].target.block_name)) {
+                        console.log('234', child)
+                        // if ('input'.includes(child.edges[e].target.block_name)) {
                             params = {'item_id': {'type': child.type}};
                             params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
-                        }
+                        // }
                     }
                 }
                 if (child.type === 'const') {
@@ -116,13 +117,17 @@ function save_new(editor) {
                             params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
                         }
                     }
+
                 }
-                if (child.type === 'in') {
+                if (child.type === 'in_const' || child.type === 'in_var_in' || child.type === 'in_block_out') {
                     for (var e in child.edges) {
-                        if ('const'.includes(child.edges[e].target.block_name)) {
-                            params = {'IN': {'type': 'const'}};
-                            params.IN.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
-                        }
+                        // if ('const'.includes(child.edges[e].target.block_name)) {
+                        let v = child.type.split('_').slice(1,);
+                        let variab = $(child.getAttribute('label')).attr('id');
+                        console.log('variab', variab)
+                        let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
+                        params[variab] =  {'type': v.join('_'), 'value': val};
+                        // }
                     }
                 }
                 if (child.type === 'args') {
@@ -130,8 +135,14 @@ function save_new(editor) {
                     for (var e in child.edges) {
                         if ('block_out'.includes(child.edges[e].target.type)) {
                             args.push({
-                                'type': 'block_out',
+                                'type': child.edges[e].target.type,
                                 'value': Number(child.edges[e].target.parent.id.split(' ')[1])
+                            });
+                        }
+                        else if (child.edges[e].target.block_name === 'input') {
+                            args.push({
+                                'type': 'var_in',
+                                'value': $(child.edges[e].target.value.getAttribute('label')).attr('id')
                             });
                         }
                     }
