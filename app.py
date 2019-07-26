@@ -79,10 +79,10 @@ def index():
                             "type": "block_out",
                             "value": 0
                         },
-                        # {
-                        #     "type": "block_out",
-                        #     "value": 1
-                        # }
+                        {
+                            "type": "block_out",
+                            "value": 1
+                        }
                     ]
                 }
             },

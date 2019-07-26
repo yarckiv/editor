@@ -337,6 +337,7 @@ function main(container, toolbar, sidebar) {
                             return false;
                         }
                         if (target.type.includes('in')) {
+                            let c = $(target.value.getAttribute('label')).attr('id')
                             target.type = 'in_block_out';
                             graph.getModel().remove(target.edges[0]);
                             source = [target, target = source][0];
@@ -347,7 +348,7 @@ function main(container, toolbar, sidebar) {
                     if (source.type.includes('out')) {
                         return false;
                     }
-                    else if (source.type.includes('in')) {
+                    else if (source.type.includes('in') || source.type.includes('const')) {
                         source.type = 'const';
                         graph.getModel().remove(source.edges[0]);
                     }
@@ -443,9 +444,10 @@ function main(container, toolbar, sidebar) {
                         g_el_body[b].block_name = 'body';
                         let inp = graph.insertVertex(g_el_body[b], null, block_name(Object.keys(t.body[b].params)[0]), -150, 100, 50, 30, 'defaultHotspot=1;editable=0;movable=0;fontSize=13');
                         inp['type'] = 'block_out';
-                        for (var i in g_el_in) {
-                            var l = $(g_el_in[i].getAttribute('label'));
-                            if (t.body[b].params.item_id.value === l.attr('id')) {
+                        for (var i in g_el_body) {
+                            var l = g_el_body[i].id.split(' ');
+                            if (t.body[b].params.item_id.value === l[1]) {
+                                console.log('33', 33)
                                 graph.insertEdge(parent, null, '', inp, g_el_in[i], 'body_input');
                             }
                         }
@@ -554,6 +556,17 @@ function main(container, toolbar, sidebar) {
             graph.getModel().endUpdate();
             for (let i = 0; i < g_el_in.length; i++) {
                 addOverlays(graph, g_el_in[i]);
+            }
+            for (let b = 0; b < g_el_body.length; b++) {
+                if (g_el_body[b].children){
+                    for (let c_b = 0; c_b < g_el_body[b].children.length; c_b++) {
+                        if (!g_el_body[b].children[c_b].edges) {
+                            let body_id = g_el_body[b].id.split(' ')[1];
+                            let v = t.body[body_id].params.item_id.value;
+                            console.log('xxx', g_el_body[b].children[c_b])
+                        }
+                    }
+                }
             }
             for (let o = 0; o < g_el_out.length; o++) {
                 addOverlays(graph, g_el_out[o]);

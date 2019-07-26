@@ -105,8 +105,8 @@ function save_new(editor) {
                     for (var e in child.edges) {
                         console.log('234', child)
                         // if ('input'.includes(child.edges[e].target.block_name)) {
-                            params = {'item_id': {'type': child.type}};
-                            params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
+                        params = {'item_id': {'type': child.type}};
+                        params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
                         // }
                     }
                 }
@@ -123,11 +123,17 @@ function save_new(editor) {
                     for (var e in child.edges) {
                         // if ('const'.includes(child.edges[e].target.block_name)) {
                         let v = child.type.split('_').slice(1,);
-                        let variab = $(child.getAttribute('label')).attr('id');
-                        console.log('variab', variab)
-                        let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
-                        params[variab] =  {'type': v.join('_'), 'value': val};
-                        // }
+                        let f = $(child.value.getAttribute('label')).attr('id');
+                        if ($(child.value.getAttribute('label')).attr('id') === 'item_id') {
+                            params = {'item_id': {'type': v.join('_')}};
+                            let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
+                            params.item_id.value = val;
+                        }
+                        else {
+                            params = {'IN': {'type': v.join('_')}};
+                            let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
+                            params.IN.value = val;
+                        }
                     }
                 }
                 if (child.type === 'args') {
