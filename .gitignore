@@ -16,7 +16,14 @@ __pycache__/
 # C extensions
 *.so
 
+#my except
 123
+mail.py
+fbd.py
+test_13.py
+test.py
+uni_test.py
+
 # Distribution / packaging
 .Python
 build/

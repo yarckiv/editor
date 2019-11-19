@@ -12,37 +12,40 @@ function show_toolbar(toolbar, sidebar, editor) {
     var spacer = document.createElement('div');
     spacer.style.display = 'inline';
     spacer.style.padding = '8px';
-    // addToolbarButton(editor, toolbar, 'new_shape', 'New shape', 'https://jgraph.github.io/mxgraph/javascript/examples/images/plus.png');
-    addToolbarButton(editor, toolbar, 'save', 'Save', 'https://jgraph.github.io/mxgraph/javascript/examples/editors/images/save.gif');
+    addToolbarButton(editor, toolbar, 'save', 'Save', '/static/img/save.png');
     toolbar.appendChild(spacer.cloneNode(true));
 
-    addToolbarButton(editor, toolbar, 'delete', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/delete2.png');
-    addToolbarButton(editor, toolbar, 'undo', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/undo.png');
-    addToolbarButton(editor, toolbar, 'redo', '', 'https://jgraph.github.io/mxgraph/javascript/examples/images/redo.png');
+    addToolbarButton(editor, toolbar, 'undo', '', '/static/img/undo.png');
+    addToolbarButton(editor, toolbar, 'redo', '', '/static/img/redo.png');
+    toolbar.appendChild(spacer.cloneNode(true));
 
+    addToolbarButton(editor, toolbar, 'delete', '', '/static/img/delete.png');
     toolbar.appendChild(spacer.cloneNode(true));
 
     // addSidebarIcon(graph, sidebar, 	table, 'https://jgraph.github.io/mxgraph/javascript/examples/images/icons48/table.png');
 }
 
 function addToolbarButton(editor, toolbar, action, label, image, isTransparent) {
-    var button = document.createElement('button');
-    button.style.fontSize = '10';
     if (image != null) {
         var img = document.createElement('img');
         img.setAttribute('src', image);
-        img.style.width = '16px';
-        img.style.height = '16px';
+        img.style.width = action === 'save' ? '100px' : '35px';
+        img.style.height = '35px';
         img.style.verticalAlign = 'middle';
         img.style.marginRight = '2px';
-        button.appendChild(img);
+        img.style.cursor = 'pointer';
+        let path = image.split('/');
+        let fn = path.pop().split('.');
+        img.onmouseover = function () {
+            let hov = path.join('/') + '/' + fn[0] + '_hover.' + fn[1];
+            img.setAttribute('src', hov);
+        };
+        img.onmouseout = function () {
+            img.setAttribute('src', image);
+        }
+
     }
-    if (isTransparent) {
-        button.style.background = 'transparent';
-        button.style.color = '#FFFFFF';
-        button.style.border = 'none';
-    }
-    mxEvent.addListener(button, 'click', function (evt) {
+    mxEvent.addListener(img, 'click', function (evt) {
         if (action === 'new_shape') {
             new_shape(editor);
         }
@@ -53,8 +56,8 @@ function addToolbarButton(editor, toolbar, action, label, image, isTransparent) 
             editor.execute(action);
         }
     });
-    mxUtils.write(button, label);
-    toolbar.appendChild(button);
+    mxUtils.write(img, label);
+    toolbar.appendChild(img);
 };
 
 //overwrite for show file sidebar
@@ -103,7 +106,6 @@ function save_new(editor) {
                 let child = body[b].children[ch_b];
                 if (child.type === 'var_in') {
                     for (var e in child.edges) {
-                        console.log('234', child)
                         // if ('input'.includes(child.edges[e].target.block_name)) {
                         params = {'item_id': {'type': child.type}};
                         params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
@@ -111,27 +113,32 @@ function save_new(editor) {
                     }
                 }
                 if (child.type === 'const') {
+                    let parent_id = child.parent.id.split(' ')[1];
+                    var ch = Object.keys(t.body[parent_id].params)[0];
                     for (var e in child.edges) {
                         if ('const'.includes(child.edges[e].target.block_name)) {
-                            params = {'item_id': {'type': child.type}};
-                            params.item_id.value = $(child.edges[e].target.value.getAttribute('label')).attr('id');
+                            params[ch] = {
+                                'type': child.type,
+                                'value': $(child.edges[e].target.value.getAttribute('label')).attr('id')
+                            };
                         }
                     }
 
                 }
                 if (child.type === 'in_const' || child.type === 'in_var_in' || child.type === 'in_block_out') {
                     for (var e in child.edges) {
-                        // if ('const'.includes(child.edges[e].target.block_name)) {
                         let v = child.type.split('_').slice(1,);
-                        let f = $(child.value.getAttribute('label')).attr('id');
+                        let val = child.type.includes(v.join('_')) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1]);
+                        if (v.join('_') === 'block_out') {
+                            val = Number(child.edges[e].target.parent.id.split(' ')[1]);
+                        }
+                        // let val = child.type.includes(v.join('_')) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1]);
                         if ($(child.value.getAttribute('label')).attr('id') === 'item_id') {
                             params = {'item_id': {'type': v.join('_')}};
-                            let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
                             params.item_id.value = val;
                         }
                         else {
                             params = {'IN': {'type': v.join('_')}};
-                            let val = child.type.includes(v) ? $(child.edges[e].target.value.getAttribute('label')).attr('id') : Number(child.edges[e].target.parent.id.split(' ')[1])
                             params.IN.value = val;
                         }
                     }
@@ -139,15 +146,15 @@ function save_new(editor) {
                 if (child.type === 'args') {
                     var args = [];
                     for (var e in child.edges) {
-                        if ('block_out'.includes(child.edges[e].target.type)) {
+                        if ('block_out, in_block_out'.includes(child.edges[e].target.type)) {
                             args.push({
-                                'type': child.edges[e].target.type,
+                                'type': 'block_out',
                                 'value': Number(child.edges[e].target.parent.id.split(' ')[1])
                             });
                         }
-                        else if (child.edges[e].target.block_name === 'input') {
+                        else if ('input, const'.includes(child.edges[e].target.block_name)) {
                             args.push({
-                                'type': 'var_in',
+                                'type': child.edges[e].target.block_name === 'input' ? 'var_in' : 'const',
                                 'value': $(child.edges[e].target.value.getAttribute('label')).attr('id')
                             });
                         }
@@ -169,10 +176,11 @@ function save_new(editor) {
     for (var o in output) {
         let label = $(output[o].value.getAttribute('label'));
         if (label.length > 0) {
-            var val;
-            for (var e in output[o].edges) {
-                val = Number(output[o].edges[e].target.parent.id.split(' ')[1]);
-            }
+            let val;
+            console.log('val', val)
+                for (var e in output[o].edges) {
+                    val = Number(output[o].edges[e].target.parent.id.split(' ')[1]);
+                }
             new_t['output'].push({
                 'var': label.attr('id'),
                 'value': val,
@@ -187,7 +195,7 @@ function save_new(editor) {
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify(new_t),
-            success: function (resp) {
+            success: function (res) {
                 location.href = '/result'
             },
             error: function () {
